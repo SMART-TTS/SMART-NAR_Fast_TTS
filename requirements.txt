@@ -1,0 +1,7 @@
+jamo==0.4.1
+librosa==0.7.2
+nltk==3.5
+num2words==0.5.10
+numpy==1.18.5
+pyaml==20.4.0
+scipy==1.5.2

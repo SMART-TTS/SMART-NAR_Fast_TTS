@@ -1,11 +1,11 @@
-# SMART-Long_Fast_TTS
+# SMART-NAR_Fast_TTS
 This repository is the official implementation of SMART-Long_Fast_TTS
 
 ## Requirements
 To install requirements:
 <pre>
 <code>
-write your own code here
+pip install -r requirements.txt
 </code>
 </pre>
 
