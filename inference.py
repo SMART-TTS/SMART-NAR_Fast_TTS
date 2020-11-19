@@ -67,7 +67,9 @@ def synthesis(args):
     bar = tqdm(data_loader)
     for i, batch in enumerate(bar):
         mels = batch['mel']
-        olens = batch['olens']
+        ilens = batch['ilens']
+        olens = batch['coarse_olens']
+        print(i, ilens[0], olens[0], float(olens[0])/float(ilens[0]))
         mels_pred, attn_ws = tts(batch=batch, device='cpu')
         wav = voc(pred_mels=mels_pred[1], device='cpu')
 
