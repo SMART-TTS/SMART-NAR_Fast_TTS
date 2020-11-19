@@ -31,13 +31,7 @@ python3 train.py --stage voc --model melgan --conf melgan_v1.yaml
 To evaluate, run:
 <pre>
 <code>
-write your own code here
+python3 inference.py --conf decode_v1.yaml
 </code>
 </pre>
 
-## Pre-trained Models
-You can download pretrained models here:
-* <http://example.com/>
-
-## Results
-Our model's performance is here:
