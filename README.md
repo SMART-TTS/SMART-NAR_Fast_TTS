@@ -20,7 +20,7 @@ python3 train.py --stage tts --model dcgantts --conf dcgantts_v1.yaml
 </code>
 </pre>
 
-To train the vocoder (only MelGAN vocoder is supported here.), run this command:
+To train the vocoder, run this command:      
 <pre>
 <code>
 python3 train.py --stage voc --model melgan --conf melgan_v1.yaml
@@ -41,6 +41,3 @@ You can download pretrained models here:
 
 ## Results
 Our model's performance is here:
-
-
-
