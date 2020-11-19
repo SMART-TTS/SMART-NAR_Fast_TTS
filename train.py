@@ -22,7 +22,6 @@ if __name__ == "__main__":
                         help='tts or voc')
     parser.add_argument('-m', '--model', type=str, default='dcgantts',
                         help='model name for train or synthesis')
-    parser.add_argument('-v', '--vocoder', type=str, default='melgan')
     parser.add_argument('-c', '--conf', type=str,
                         default='dcgantts_v1.yaml',
                         help='config file path')

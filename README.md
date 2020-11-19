@@ -1,6 +1,9 @@
 # SMART-NAR_Fast_TTS
 This repository is the official implementation of SMART-Long_Fast_TTS
 
+## Environment
+Under Python 3.6
+
 ## Requirements
 To install requirements:
 <pre>
@@ -10,10 +13,17 @@ pip install -r requirements.txt
 </pre>
 
 ## Training
-To train the model(s), run this command:
+To train the NAR TTS model, run this command:
 <pre>
 <code>
-write your own code hereddddd
+python3 train.py --stage tts --model dcgantts --conf dcgantts_v1.yaml
+</code>
+</pre>
+
+To train the vocoder (only MelGAN vocoder is supported here.), run this command:
+<pre>
+<code>
+python3 train.py --stage voc --model melgan --conf melgan_v1.yaml
 </code>
 </pre>
 
