@@ -13,7 +13,7 @@ pip install -r requirements.txt
 To train the model(s), run this command:
 <pre>
 <code>
-write your own code here
+write your own code hereddddd
 </code>
 </pre>
 
