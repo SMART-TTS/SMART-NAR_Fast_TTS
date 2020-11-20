@@ -14,6 +14,7 @@ from utils.data_utils import _DataCollate, _DataLoader
 from utils.text import get_symbols
 from model.voc.train import load_model as load_model_voc
 
+
 def save_checkpoint(model, optimizers, schedulers, learning_rate, iteration, filepath):
     print("Saving model and optimizer state at iteration {} to {}".format(
         iteration, filepath))
@@ -51,7 +52,11 @@ def load_model(model, conf, is_training=True):
     model = 'model.tts.' + model + '.module.' + model
     m = importlib.import_module(model)
     model = m.Model(conf, is_training)
-    optimizers, schedulers = m.optimizer(conf, model)
+
+    if is_training:
+        optimizers, schedulers = m.optimizer(conf, model)
+    else:
+        optimizers, schedulers = None, None
 
     # parallel
     if len(list(conf['train']['device'])) > 1:
@@ -121,11 +126,6 @@ def train(args):
 
     # load model
     conf = yaml.load(open(args.conf))
-    if conf['preprocess']:
-        from preprocess import preprocess
-        preprocess(conf)
-
-    conf['load_mel_from_disk'] = True
     if conf['data']['text_cleaners'] == ['english_cleaners']:
         sym_to_id, _ = get_symbols('english_cleaners')
     else:

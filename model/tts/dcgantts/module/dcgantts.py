@@ -110,7 +110,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.is_training = is_training
-        if conf['train']['attention_masking'] is not None:
+        if conf['data']['attention_masking'] is not None:
             self.is_attention_masking = True
         self.DCGANTTSLoss = ModelLoss(conf)
         self.loss_snapshot_step = conf['train']['loss_snapshot_step']
@@ -136,7 +136,6 @@ class Model(nn.Module):
             self.mel_encoder = AudioEncoder(self.fdim, self.ddim, self.dropout_rate)
             self.discriminator = Discriminator(**self.conf_model['d'])
 
-#    def forward(self, step, batch=None, valid=False, d_in_fake=None, d_in_real=None, dynamic_guide=None, logger=None, gs=None, valid_num=None, report_name_for_outs=None):
     def forward(self, step=None, batch=None, d_in_real=None, d_in_fake=None, logger=None, gs=None, epoch=None,
                 dynamic_guide=None, voc=None,
                 valid=False, valid_num=None, report_name_for_outs=None,
@@ -168,22 +167,18 @@ class Model(nn.Module):
             zs = [np.random.normal(0, 1, (olen, 1)) for olen in coarse_olens]
             zs = pad_list([torch.from_numpy(z).float() for z in zs], 0).cuda()
             if self.is_attention_masking and epoch < 100:
-                attn_mask_for_attn_masking = batch['attn_mask2'].detach().cuda()
-                attn_mask_for_attn_masking = attn_mask_for_attn_masking[:, :ilens_max, :coarse_olens_max]
+                attn_mask = batch['attn_mask'].detach().cuda()
+                attn_mask = attn_mask[:, :ilens_max, :coarse_olens_max]
             else:
-                attn_mask_for_attn_masking = None
+                attn_mask = None
 
             ks, vs = self.text_encoder(texts)
-            ls_from_mel_enc, attn_ws_mel_enc = self.mel_encoder(ks, vs, coarse_mels_in,
-                                                                attn_mask_for_attn_masking)
-            coarse_mels_pred_from_mel_enc, attn_ws_mel_dec = self.mel_decoder(ks, vs, ls_from_mel_enc,
-                                                                              attn_mask_for_attn_masking)
+            ls_from_mel_enc, attn_ws_mel_enc = self.mel_encoder(ks, vs, coarse_mels_in, attn_mask)
+            coarse_mels_pred_from_mel_enc, attn_ws_mel_dec = self.mel_decoder(ks, vs, ls_from_mel_enc, attn_mask)
             mels_pred_from_mel_enc = self.postnet(coarse_mels_pred_from_mel_enc[1])
 
-            ls_from_generator, attn_ws_generator = self.generator(ks, vs, zs,
-                                                                  attn_mask_for_attn_masking)
-            coarse_mels_pred_from_generator, attn_ws_generator = self.mel_decoder(ks, vs, ls_from_generator,
-                                                                                  attn_mask_for_attn_masking)
+            ls_from_generator, attn_ws_generator = self.generator(ks, vs, zs, attn_mask)
+            coarse_mels_pred_from_generator, attn_ws_generator = self.mel_decoder(ks, vs, ls_from_generator, attn_mask)
             mels_pred_from_generator = self.postnet(coarse_mels_pred_from_generator[1])
 
             ys_pred = (coarse_mels_pred_from_mel_enc, coarse_mels_pred_from_generator, mels_pred_from_mel_enc,

@@ -12,6 +12,16 @@ pip install -r requirements.txt
 </code>
 </pre>
 
+## Preprocessing
+To preprocess:
+<pre>
+<code>
+python3 preprocess.py --conf {configuration file path}
+
+e.g. > python3 preprocess.py --conf model/tts/dcgantts/conf/dcgantts_v1.yaml
+</code>
+</pre>
+
 ## Training
 To train the NAR TTS model, run this command:
 <pre>
@@ -37,3 +47,4 @@ python3 inference.py --conf decode_v1.yaml
 
 ## Reference
 [1] https://github.com/descriptinc/melgan-neurips
+[2] https://github.com/chaiyujin/dctts-pytorch

@@ -1,7 +1,9 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch
 from torch.nn.utils import weight_norm
+from torch.optim import lr_scheduler
+
 import numpy as np
 import scipy
 from librosa.output import write_wav as write
@@ -67,15 +69,15 @@ class Model(nn.Module):
         self.MelGANLoss = ModelLoss(conf)
         self.loss_snapshot_step = conf['train']['loss_snapshot_step']
 
-    def forward(self, step=None, batch=None, logger=None, gs=None, valid=False, valid_num=None, device=None, outdir=None, pred_mels=None):
+    def forward(self, step=None, batch=None, logger=None, gs=None, valid=False, valid_num=None, outdir=None, pred_mels=None):
         if self.is_training:
-            return self._forward(step, batch, logger, gs, valid, valid_num, device, outdir)
+            return self._forward(step, batch, logger, gs, valid, valid_num, outdir)
         else:
-            return self._inference(pred_mels, device)
+            return self._inference(pred_mels)
 
-    def _forward(self, step, batch, logger, gs, valid=False, valid_num=None, device=None, outdir=None):
-        mels = batch['mels_seg'].to(device)
-        wavs = batch['audios_seg'].to(device)
+    def _forward(self, step, batch, logger, gs, valid=False, valid_num=None, outdir=None):
+        mels = batch['mels_seg'].cuda()
+        wavs = batch['audios_seg'].cuda()
         wavs_pred = self.netG(mels.detach())
         report_loss_keys = []
         if not valid:
@@ -111,12 +113,13 @@ class Model(nn.Module):
             logger.log_wav(report_key_wavs, gs)
             for report_wav in report_key_wavs:
                 for k in report_wav.keys():
-                    filename = "{}/{}_{}.step.wav".format(outdir, k, str(gs))
+                    # filename = "{}/{}_{}.step.wav".format(outdir, k, str(gs))
+                    filename = "{}/{}.wav".format(outdir, k)
                     _audio = (report_wav[k][0] * 32768.0).astype("int16")
                     scipy.io.wavfile.write(filename, self.sampling_rate, _audio)
 
-    def _inference(self, pred_mels, device):
-        wavs_pred = self.netG(pred_mels.to(device).detach())
+    def _inference(self, pred_mels):
+        wavs_pred = self.netG(pred_mels.detach())
         audio_pred = wavs_pred.squeeze(1)
         audio_pred = audio_pred.cpu().detach().numpy()
 
@@ -136,7 +139,9 @@ def optimizer(conf, melgan):
     optimizers = {"optimizer_g": optimizer_g,
                   "optimizer_d": optimizer_d}
 
-    return optimizers
+    schedulers = None
+
+    return optimizers, schedulers
 
 
 def weights_init(m):

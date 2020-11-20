@@ -1,18 +1,18 @@
+preprocess: no
+load_mel_from_disk: yes
 voc:
-#  model: melgan
-#  checkpoints: exp/melgan_v2/norm_feat/checkpoint_798000
-#  conf: model/voc/melgan/conf/melgan_v2.yaml
 
 data:
   featdir: feats
-  data_name: SMART_TTS
-  training_files: db/SMART_TTS/train.txt
-  validation_files: db/SMART_TTS/valid.txt
+  data_name: chj_22050
+  training_files: db/chj_22050/train.txt
+  validation_files: db/chj_22050/validation.txt
 
   batch: [mel, coarse_mel, text, attn_guide, attn_mask]
+  is_norm: yes
 
-  length_ratio_max: 2.82813
-  length_ratio_min: 0.77778
+  length_ratio_max:
+  length_ratio_min:
   data_max_text_length: 400
   data_max_mel_length: 480
 
@@ -28,64 +28,43 @@ data:
   max_wav_value: 32768.0
   reduction_factor: 4
 
-  attention_masking:
-    g: 0.15
-
-  guided_attention:
-    g: 0.2
 
 train:
-  adversarial_training: yes
+  adversarial_training: no
+  module: t2m
   distributed_run: no
 
   tensorboard_dir: log
   exp_directory: exp
-  exp_name: developing_model
+  exp_name: t2m_norm_feat
   checkpoint:
 
-  batch_size: 24
+  batch_size: 32
   reduction_factor: 4
-  epoch: 6000
-
-  device: [2]
+  epoch: 700
 
   valid_epoch: 5
   valid_num: 5
   loss_snapshot_step: 100
   save_epoch: 5
 
+  ngpu: 1
+  device: cuda:1
+
   guided_attention:
+    guide_g: 0.2
     guide_weight: 100.0
     guide_decay: 0.99999
     guide_lowbound: 1
 
 optimizer:
-  adam_alpha: 1e-4
+  adam_alpha: 2e-4
   adam_beta1: 0.5
   adam_beta2: 0.9
-
-scheduler:
-  gamma: 0.99999
+  adam_eps: 1e-6
 
 model:
   fdim: 80
   edim: 128
   ddim: 256
   dropout_rate: 0.05
-  drop_mel: 0.2
-
-  feat_match: 10.0
-  discriminator_input_level: latent
-  g:
-    n_mels: 80
-    ngf: 32
-    n_residual_layers: 3
-
-  d:
-    num_D: 1
-    idim: 64
-    n_layers_D: 4
-
-  duration_predictor: no
-
-

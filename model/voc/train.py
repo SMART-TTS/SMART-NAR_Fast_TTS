@@ -13,7 +13,7 @@ from utils import TensorboardLog
 from utils.data_utils import _DataCollate, _DataLoader
 
 
-def save_checkpoint(model, optimizers, learning_rate, iteration, filepath):
+def save_checkpoint(model, optimizers, schedulers, learning_rate, iteration, filepath):
     print("Saving model and optimizer state at iteration {} to {}".format(
         iteration, filepath))
     state = {"iteration": iteration,
@@ -21,10 +21,14 @@ def save_checkpoint(model, optimizers, learning_rate, iteration, filepath):
              "learning_rate": learning_rate}
     for k in optimizers.keys():
         state[k] = optimizers[k].state_dict()
+    if schedulers is not None:
+        for k in schedulers.keys():
+            state[k] = schedulers[k].state_dict()
 
     torch.save(state, filepath)
 
-def load_checkpoint(checkpoint_path, model, optimizers=None):
+
+def load_checkpoint(checkpoint_path, model, optimizers=None, schedulers=None):
     assert os.path.isfile(checkpoint_path)
     print("Loading checkpoint '{}'".format(checkpoint_path))
     checkpoint_dict = torch.load(checkpoint_path, map_location='cpu')
@@ -32,34 +36,42 @@ def load_checkpoint(checkpoint_path, model, optimizers=None):
     if optimizers is not None:
         for k in optimizers:
             optimizers[k].load_state_dict(checkpoint_dict[k])
+    if schedulers is not None:
+        for k in schedulers:
+            schedulers[k].load_state_dict(checkpoint_dict[k])
     learning_rate = checkpoint_dict['learning_rate']
     iteration = checkpoint_dict['iteration']
     print("Loaded checkpoint '{}' from iteration {}" .format(
         checkpoint_path, iteration))
-    return model, optimizers, learning_rate, iteration
+    return model, optimizers, schedulers, learning_rate, iteration
 
 
 def load_model(model, conf, is_training=True):
     model = 'model.voc.' + model + '.module.' + model
     m = importlib.import_module(model)
-    device = conf['train']['device']
-    model = m.Model(conf, is_training).to(device)
+    model = m.Model(conf, is_training)
 
     if is_training:
-        optimizers = m.optimizer(conf, model)
+        optimizers, schedulers = m.optimizer(conf, model)
     else:
-        optimizers = None
+        optimizers, schedulers = None, None
 
     # parallel
-    # --------
+    if len(list(conf['train']['device'])) > 1:
+        model = torch.nn.DataParallel(model, device_ids=list(conf['train']['device']))
+        model = model.cuda()
+    else:
+        device = conf['train']['device']
+        torch.cuda.set_device(device[0])  # change allocation of current GPU
+        model = model.cuda()
+        print('Current cuda device ', torch.cuda.current_device())  # check
 
     global_step = 0
-    if is_training:
-        if conf['train']['checkpoint']:
-            model, optimizers, learning_rate, global_step = load_checkpoint(
-                conf['train']['checkpoint'], model, optimizers)
+    if is_training and conf['train']['checkpoint']:
+        model, optimizers, schedulers, learning_rate, global_step = load_checkpoint(
+            conf['train']['checkpoint'], model, optimizers, schedulers)
 
-    return model, optimizers, global_step
+    return model, optimizers, schedulers, global_step
 
 
 def prepare_dataloaders(conf):
@@ -78,7 +90,7 @@ def prepare_dataloaders(conf):
                               batch_size=conf['train']['batch_size'], pin_memory=False,
                               drop_last=True, collate_fn=collate_fn)
     val_loader = DataLoader(valset, sampler=train_sampler, num_workers=1,
-                            shuffle=True, batch_size=1,
+                            shuffle=False, batch_size=1,
                             pin_memory=False, collate_fn=collate_fn)
 
     return train_loader, val_loader, collate_fn
@@ -86,13 +98,12 @@ def prepare_dataloaders(conf):
 
 def validate(conf, model, data_loader, output_directory, logger, gs):
     model.eval()
-    device = conf['train']['device']
     dataiter = iter(data_loader)
     with torch.no_grad():
         for i in range(int(conf['train']['valid_num'])):
             batch = next(dataiter)
             _ = model(step='g', batch=batch,
-                      logger=logger, gs=gs, valid_num=i, valid=True, device=device, outdir=output_directory)
+                      logger=logger, gs=gs, valid_num=i, valid=True, outdir=output_directory)
 
     model.train()
 
@@ -106,25 +117,27 @@ def train(args):
 
     # load model
     conf = yaml.load(open(args.conf))
-    if conf['preprocess']:
-        from preprocess import preprocess
-        preprocess(conf)
 
-    device = conf['train']['device']
-
-    model, optimizers, gs = load_model(args.vocoder, conf)
+    model, optimizers, schedulers, gs = load_model(args.model, conf)
     train_loader, val_loader, collate_fn = prepare_dataloaders(conf)
 
     adversarial_training = conf['train']['adversarial_training']
     if adversarial_training:
         optimizer_g = optimizers['optimizer_g']
         optimizer_d = optimizers['optimizer_d']
+        if schedulers is not None:
+            scheduler_g = schedulers['scheduler_g']
+            scheduler_d = schedulers['scheduler_d']
+    else:
+        optimizer = optimizers['optimizer']
+        if schedulers is not None:
+            scheduler = schedulers['scheduler']
 
     start_ep = int(gs / len(train_loader)) if gs > 0 else 0
 
     # logger
-    model_name = os.path.basename(os.path.splitext(args.conf)[0])
     exp_name = conf['train']['exp_name']
+    model_name = os.path.basename(os.path.splitext(args.conf)[0])
     tensorboard_dir = os.path.join(conf['train']['tensorboard_dir'], model_name, exp_name)
     logger = TensorboardLog(tensorboard_dir)
 
@@ -144,16 +157,15 @@ def train(args):
         bar = tqdm(train_loader)
 
         for i, batch in enumerate(bar):
-
             if adversarial_training:
-                loss, _ = model(step='g', batch=batch, logger=logger, gs=gs, device=device)
+                loss, _ = model(step='g', batch=batch, logger=logger, gs=gs)
 
                 optimizer_d.zero_grad()
                 optimizer_g.zero_grad()
                 loss.backward()
                 optimizer_g.step()
 
-                loss, _ = model(step='d', batch=batch, logger=logger, gs=gs, device=device)
+                loss, _ = model(step='d', batch=batch, logger=logger, gs=gs)
 
                 optimizer_d.zero_grad()
                 optimizer_g.zero_grad()
@@ -162,6 +174,13 @@ def train(args):
 
             bar.set_description("ep: {}, gs: {}".format(epoch, gs))
             gs += 1
+
+        if schedulers is not None:
+            if adversarial_training:
+                scheduler_g.step()
+                scheduler_d.step()
+            else:
+                scheduler.step()
 
         if (epoch + 1) % int(conf['train']['save_epoch']) == 0:
             checkpoint_path = os.path.join(
