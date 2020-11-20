@@ -115,6 +115,7 @@ class Model(nn.Module):
         self.DCGANTTSLoss = ModelLoss(conf)
         self.loss_snapshot_step = conf['train']['loss_snapshot_step']
 
+        self.main_device = conf['train']['device'][0]
         self.conf_model = conf['model']
         self.conf_data = conf['data']
         self.idim = self.conf_model['idim']
@@ -125,34 +126,50 @@ class Model(nn.Module):
         self.drop_mel = self.conf_model['drop_mel']
         self.length_ratio_max = self.conf_data['length_ratio_max']
         self.length_ratio_min = self.conf_data['length_ratio_min']
+        self.disc_in_level = self.conf_model['discriminator_input_level']
 
         self.text_encoder = TextEncoder(self.idim, self.edim, self.ddim, self.dropout_rate)
-        self.mel_encoder = AudioEncoder(self.fdim, self.ddim, self.dropout_rate)
         self.mel_decoder = AudioDecoder(self.fdim, self.ddim, self.dropout_rate)
         self.postnet = PostNet(self.fdim, self.ddim, self.dropout_rate)
         self.generator = Generator(self.ddim, self.dropout_rate)
-        self.discriminator = Discriminator(**self.conf_model['d'])
+        if is_training:
+            self.mel_encoder = AudioEncoder(self.fdim, self.ddim, self.dropout_rate)
+            self.discriminator = Discriminator(**self.conf_model['d'])
 
-    def forward(self, step=None, batch=None, valid=False, d_in_fake=None, d_in_real=None, dynamic_guide=None, logger=None, gs=None, device=None, valid_num=None, report_name_for_outs=None,
+#    def forward(self, step, batch=None, valid=False, d_in_fake=None, d_in_real=None, dynamic_guide=None, logger=None, gs=None, valid_num=None, report_name_for_outs=None):
+    def forward(self, step=None, batch=None, d_in_real=None, d_in_fake=None, logger=None, gs=None, epoch=None,
+                dynamic_guide=None, voc=None,
+                valid=False, valid_num=None, report_name_for_outs=None,
                 texts=None, target_len=None):
         if self.is_training:
-            return self._forward(step, batch, valid, d_in_fake, d_in_real, dynamic_guide, logger, gs, device, valid_num, report_name_for_outs)
+            return self._forward(step=step, batch=batch, d_in_real=d_in_real, d_in_fake=d_in_fake,
+                                 valid=valid, dynamic_guide=dynamic_guide, logger=logger, gs=gs, epoch=epoch,
+                                 valid_num=valid_num, report_name_for_outs=report_name_for_outs,
+                                 voc=voc)
         else:
-            return self._inference(texts=texts, batch=batch, device=device, target_len=target_len)
+            return self._inference(batch=batch)
 
-    def _forward(self, step, batch, valid=False, d_in_fake=None, d_in_real=None, dynamic_guide=None, logger=None, gs=None, device=None, valid_num=None, report_name_for_outs=None):
+    def _forward(self, step, batch, d_in_real=None, d_in_fake=None,
+                 valid=False, dynamic_guide=None, logger=None, gs=None, epoch=None,
+                 valid_num=None, report_name_for_outs=None, voc=None):
         report_loss_keys = []
+        coarse_olens = batch['coarse_olens'].detach().cuda()
+        coarse_olens_max = max(coarse_olens)
+        olens = batch['olens'].detach().cuda()
+        olens_max = max(olens)
+        ilens = batch['ilens'].detach().cuda()
+        ilens_max = max(ilens)
         if step == 'g':
-            texts = batch['text'].detach().to(device)
-            mels = batch['mel'].detach().to(device)
-            coarse_mels = batch['coarse_mel'].detach().to(device)
-            attn_guides = batch['attn_guide'].detach().to(device)
+            texts = batch['text'].detach().cuda()
+            mels = batch['mel'].detach().cuda()
+            coarse_mels = batch['coarse_mel'].detach().cuda()
+            attn_guides = batch['attn_guide'].detach().cuda()
             coarse_mels_in = nn.functional.dropout(coarse_mels, p=self.drop_mel, training=True)
-            coarse_olens = batch['coarse_olens'].detach().to(device)
             zs = [np.random.normal(0, 1, (olen, 1)) for olen in coarse_olens]
-            zs = pad_list([torch.from_numpy(z).float() for z in zs], 0).to(device)
-            if self.is_attention_masking:
-                attn_mask_for_attn_masking = batch['attn_mask2'].detach().to(device)
+            zs = pad_list([torch.from_numpy(z).float() for z in zs], 0).cuda()
+            if self.is_attention_masking and epoch < 100:
+                attn_mask_for_attn_masking = batch['attn_mask2'].detach().cuda()
+                attn_mask_for_attn_masking = attn_mask_for_attn_masking[:, :ilens_max, :coarse_olens_max]
             else:
                 attn_mask_for_attn_masking = None
 
@@ -174,15 +191,21 @@ class Model(nn.Module):
             ys = (coarse_mels, mels)
             attn_ws = (attn_ws_mel_enc, attn_ws_mel_dec, attn_ws_generator)
 
-            d_out_fake = self.discriminator(ls_from_generator)
-            d_out_real = self.discriminator(ls_from_mel_enc.detach())
+            if self.disc_in_level == 'mel':
+                d_in_real = coarse_mels_pred_from_mel_enc[1]
+                d_in_fake = coarse_mels_pred_from_generator[1]
+            else:
+                d_in_real = ls_from_mel_enc
+                d_in_fake = ls_from_generator
+
+            d_out_fake = self.discriminator(d_in_fake)
+            d_out_real = self.discriminator(d_in_real.detach())
             loss, _report_loss_keys = self.DCGANTTSLoss(step=step, ys_pred=ys_pred, ys=ys,
                                                         attn_ws=attn_ws, attn_guide=attn_guides,
                                                         dynamic_guide=dynamic_guide,
                                                         d_out_fake=d_out_fake, d_out_real=d_out_real)
             report_loss_keys += _report_loss_keys
-            d_in_fake = ls_from_generator
-            d_in_real = ls_from_mel_enc
+
 
         if step == 'd':
             d_out_fake = self.discriminator(d_in_fake.detach())
@@ -196,9 +219,6 @@ class Model(nn.Module):
                     logger.log_loss(report_loss_keys, gs)
 
             else:
-                ilens = batch['ilens'].detach().to(device)
-                coarse_olens = batch['coarse_olens'].detach().to(device)
-
                 report_mels_keys = []
                 report_attn_ws_keys = []
                 report_mels_keys += [{"coarse_mels_pred_from_mel_enc": coarse_mels_pred_from_mel_enc[1].transpose(1, 2)},
@@ -214,35 +234,24 @@ class Model(nn.Module):
                                         {"attn_guide": attn_guides},
                                         ]
 
-                if self.is_attention_masking:
-                    report_attn_ws_keys += [{"attn_mask_for_attn_masking": attn_mask_for_attn_masking}]
-
                 logger.log_spec(report_mels_keys, coarse_olens, gs, report_name_for_outs, str(valid_num))
                 logger.log_attn_ws(report_attn_ws_keys, ilens, coarse_olens, gs, report_name_for_outs, str(valid_num))
 
-        return loss, report_loss_keys, d_in_fake, d_in_real
+        return loss, d_in_real, d_in_fake
 
-    def _inference(self, texts, target_len, batch=None, device=None):
-        zs = [np.random.normal(0, 1, (olen, 1)) for olen in target_len]
-        zs = pad_list([torch.from_numpy(z).float() for z in zs], 0).to(device)
-
-        ks, vs = self.text_encoder(texts)
-        ls_from_generator, attn_ws_generator = self.generator(ks, vs, zs, None)
-        coarse_mels_pred_from_generator, attn_ws_generator = self.mel_decoder(ks, vs, ls_from_generator, None)
-        mels_pred_from_generator = self.postnet(coarse_mels_pred_from_generator[1])
-
-        return mels_pred_from_generator, attn_ws_generator
 
 def optimizer(conf, dcgantts):
-    conf_opt = conf['optimizer']
+    conf_optimizer = conf['optimizer']
+    conf_scheduler = conf['scheduler']
 
     for name, param in dcgantts.named_parameters():
         if 'discriminator' in name:
             param.requires_grad = False
     optimizer_g = torch.optim.Adam(
         filter(lambda p: p.requires_grad, dcgantts.parameters()),
-        lr=float(conf_opt['adam_alpha']),
-        betas=(float(conf_opt['adam_beta1']), float(conf_opt['adam_beta2'])))
+        lr=float(conf_optimizer['adam_alpha']),
+        betas=(float(conf_optimizer['adam_beta1']), float(conf_optimizer['adam_beta2'])))
+    scheduler_g = lr_scheduler.ExponentialLR(optimizer_g, gamma=conf_scheduler['gamma'])
 
     for name, param in dcgantts.named_parameters():
         param.requires_grad = False
@@ -250,8 +259,9 @@ def optimizer(conf, dcgantts):
             param.requires_grad = True
     optimizer_d = torch.optim.Adam(
         filter(lambda p: p.requires_grad, dcgantts.parameters()),
-        lr=float(conf_opt['adam_alpha']),
-        betas=(float(conf_opt['adam_beta1']), float(conf_opt['adam_beta2'])))
+        lr=float(conf_optimizer['adam_alpha']),
+        betas=(float(conf_optimizer['adam_beta1']), float(conf_optimizer['adam_beta2'])))
+    scheduler_d = lr_scheduler.ExponentialLR(optimizer_d, gamma=conf_scheduler['gamma'])
 
     for name, param in dcgantts.named_parameters():
         param.requires_grad = True
@@ -259,7 +269,11 @@ def optimizer(conf, dcgantts):
     optimizers = {"optimizer_g": optimizer_g,
                   "optimizer_d": optimizer_d}
 
-    return optimizers
+    schedulers = {"scheduler_g": scheduler_g,
+                  "scheduler_d": scheduler_d}
+
+    return optimizers, schedulers
+
 
 class DurationPredictor(nn.Module):
     def __init__(self, ddim, dropout_rate):
@@ -370,8 +384,7 @@ class TextEncoder(nn.Module):
                                              dilation=1,
                                              padding="same")]
                 if not (j == 0 and k == 1):
-                    # self.convs += [nn.Dropout(dropout_rate)]
-                    nn.Dropout(dropout_rate)
+                    self.convs += [nn.Dropout(dropout_rate)]
 
     def forward(self, xs):
         xs = self.embed(xs).transpose(1, 2)
@@ -382,7 +395,7 @@ class TextEncoder(nn.Module):
 
 
 class AudioEncoder(nn.Module):
-    def __init__(self, fdim, ddim, dropout_rate, is_training=True):
+    def __init__(self, fdim, ddim, dropout_rate):
         torch.nn.Module.__init__(self)
 
         self.ddim = ddim
@@ -641,12 +654,12 @@ class Generator(nn.Module):
 
 
 class NLayerDiscriminator(nn.Module):
-    def __init__(self, ndf, n_layers):
+    def __init__(self, idim, n_layers):
         super().__init__()
         model = nn.ModuleDict()
 
         model["layer_0"] = nn.Sequential(
-            nn.Conv1d(64, 128, kernel_size=1, stride=1, dilation=1),
+            nn.Conv1d(idim, 128, kernel_size=1, stride=1, dilation=1),
             nn.BatchNorm1d(128),
             nn.LeakyReLU(0.2),
         )
@@ -684,12 +697,12 @@ class NLayerDiscriminator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, num_D, ndf, n_layers_D):
+    def __init__(self, num_D, idim, n_layers_D):
         super().__init__()
         self.model = nn.ModuleDict()
         for i in range(num_D):
             self.model[f"disc_{i}"] = NLayerDiscriminator(
-                ndf, n_layers_D
+                idim, n_layers_D
             )
         self.downsample = nn.AvgPool1d(4, stride=2, padding=1, count_include_pad=False)
 

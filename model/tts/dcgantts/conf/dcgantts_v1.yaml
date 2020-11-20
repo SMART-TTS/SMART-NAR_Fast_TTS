@@ -1,0 +1,81 @@
+preprocess: no
+load_mel_from_disk: yes
+voc: exp/melgan_v1/norm_feat/checkpoint_730500
+
+data:
+  featdir: feats
+  data_name: chj_22050
+  training_files: db/chj_22050/train.txt
+  validation_files: db/chj_22050/validation.txt
+
+  batch: [mel, coarse_mel, text, attn_guide]
+  is_norm: yes
+
+  length_ratio_max: 2.82813
+  length_ratio_min: 0.77778
+  data_max_text_length: 400
+  data_max_mel_length: 480
+
+  text_cleaners: ['korean_cleaners']
+  sampling_rate: 22050
+  audio_refdB: 20
+  audio_maxdB: 100
+  n_fft: 1024
+  hop_length: 256
+  win_length: 1024
+  n_mel: 80
+  segment_length:
+  max_wav_value: 32768.0
+  reduction_factor: 4
+
+train:
+  adversarial_training: yes
+  distributed_run: no
+
+  tensorboard_dir: log
+  exp_directory: exp
+  exp_name: norm_feat
+  checkpoint: exp/dcgantts_v1/norm_feat/checkpoint_774540
+
+  batch_size: 32
+  reduction_factor: 4
+  epoch: 2000
+
+  valid_epoch: 5
+  valid_num: 5
+  loss_snapshot_step: 100
+  save_epoch: 5
+
+  ngpu: 1
+  device: cuda:2
+
+  guided_attention:
+    guide_g: 0.2
+    guide_weight: 100.0
+    guide_decay: 0.99999
+    guide_lowbound: 1
+
+optimizer:
+  adam_alpha: 1e-6
+  adam_beta1: 0.5
+  adam_beta2: 0.9
+
+model:
+  fdim: 80
+  edim: 128
+  ddim: 256
+  dropout_rate: 0.05
+  drop_mel: 0.2
+
+  feat_match: 10.0
+  g:
+    n_mels: 80
+    ngf: 32
+    n_residual_layers: 3
+
+  d:
+    num_D: 1
+    ndf: 16
+    n_layers_D: 4
+
+

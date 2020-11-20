@@ -56,12 +56,13 @@ class Model(nn.Module):
     def __init__(self, conf, is_training=True):
         super(Model, self).__init__()
 
+        self.is_training = is_training
         self.sampling_rate = conf['data']['sampling_rate']
         model_g_conf = conf['model']['g']
         model_d_conf = conf['model']['d']
         self.netG = Generator(**model_g_conf)
-        self.netD = Discriminator(**model_d_conf)
-        self.is_training = is_training
+        if self.is_training:
+            self.netD = Discriminator(**model_d_conf)
 
         self.MelGANLoss = ModelLoss(conf)
         self.loss_snapshot_step = conf['train']['loss_snapshot_step']

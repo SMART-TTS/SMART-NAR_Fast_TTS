@@ -420,3 +420,4 @@ def guide_attention(text_lengths, mel_lengths, guide_g=0.2, r=None, c=None):
                     w = 1.0 - np.exp(-((float(n - N - 1) / N) ** 2 / (2.0 * (guide_g ** 2))))
                     W[n][t] = w
     return guide, mask
+

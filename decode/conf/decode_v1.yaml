@@ -1,0 +1,29 @@
+device: cpu
+load_mel_from_disk: yes
+test_files: decode/validation_stts_seg.txt #decode/train_stts.txt validation_stts_seg.txt #valid_seg.txt
+
+data:
+  batch: [text, mel, coarse_mel, attn_guide, attn_mask2] # mel # , attn_guide, attn_mask2
+  data_name: SMART_TTS # SMART_TTS chj_22050
+  is_norm: yes
+
+  sampling_rate: 22050
+  audio_refdB: 20
+  audio_maxdB: 100
+  n_fft: 1024
+  hop_length: 256
+  win_length: 1024
+  n_mel: 80
+  segment_length: 8192
+  max_wav_value: 32768.0
+  reduction_factor: 4
+  text_cleaners: ['korean_cleaners']
+
+model_tts: dcgantts
+tts_conf: model/tts/dcgantts/conf/dcgantts_v6.yaml #model/tts/dcgantts/conf/dcgantts_v4.yaml model/tts/dcgantts/conf/dcgantts_v6.yaml
+model_voc: melgan
+voc_conf: model/voc/melgan/conf/melgan_v2.yaml #model/voc/melgan/conf/melgan_v1.yaml model/voc/melgan/conf/melgan_v2.yaml
+
+checkpoint_tts: exp/dcgantts_v6/norm_feat/checkpoint_1932840 #exp/dcgantts_v4/norm_feat/checkpoint_936000 exp/dcgantts_v4/norm_feat/checkpoint_1354860
+checkpoint_voc: exp/melgan_v2/norm_feat/checkpoint_272650 #399000 #exp/melgan_v1/norm_feat/checkpoint_730500 exp/melgan_v2/norm_feat/checkpoint_399000
+

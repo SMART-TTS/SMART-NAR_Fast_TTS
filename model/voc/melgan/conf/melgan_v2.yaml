@@ -3,9 +3,9 @@ load_mel_from_disk: no
 
 data:
   featdir: feats
-  data_name: chj_22050
-  training_files: db/chj_22050/train.txt
-  validation_files: db/chj_22050/validation.txt
+  data_name: SMART_TTS
+  training_files: db/SMART_TTS_20201105/train.txt
+  validation_files: db/SMART_TTS_20201105/validation.txt
 
   batch: [mel_seg, audio_seg]
   is_norm: yes
@@ -24,17 +24,17 @@ data:
 
 train:
   ngpu: 1
-  device: cuda:0
+  device: cuda:2
   adversarial_training: yes
   distributed_run: no
 
-  checkpoint: exp/melgan_v1/norm_feat/checkpoint_730500
+  checkpoint: exp/melgan_v2/norm_feat/checkpoint_399000 #exp/melgan_v1/norm_feat/checkpoint_730500
   exp_directory: exp
   exp_name: norm_feat
   tensorboard_dir: log
 
   batch_size: 32
-  epoch: 4000
+  epoch: 3000
 
   valid_epoch: 5
   valid_num: 5

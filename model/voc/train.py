@@ -44,15 +44,20 @@ def load_model(model, conf, is_training=True):
     m = importlib.import_module(model)
     device = conf['train']['device']
     model = m.Model(conf, is_training).to(device)
-    optimizers = m.optimizer(conf, model)
+
+    if is_training:
+        optimizers = m.optimizer(conf, model)
+    else:
+        optimizers = None
 
     # parallel
     # --------
 
     global_step = 0
-    if conf['train']['checkpoint']:
-        model, optimizers, learning_rate, global_step = load_checkpoint(
-            conf['train']['checkpoint'], model, optimizers)
+    if is_training:
+        if conf['train']['checkpoint']:
+            model, optimizers, learning_rate, global_step = load_checkpoint(
+                conf['train']['checkpoint'], model, optimizers)
 
     return model, optimizers, global_step
 
@@ -141,7 +146,7 @@ def train(args):
         for i, batch in enumerate(bar):
 
             if adversarial_training:
-                loss, _, d_in_fake, d_in_real = model(step='g', batch=batch, logger=logger, gs=gs, device=device)
+                loss, _ = model(step='g', batch=batch, logger=logger, gs=gs, device=device)
 
                 optimizer_d.zero_grad()
                 optimizer_g.zero_grad()
