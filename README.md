@@ -40,4 +40,3 @@ python3 inference.py --conf decode_v1.yaml
 [1] https://github.com/descriptinc/melgan-neurips
 [1] https://github.com/descriptinc/melgan-neurips
 [1] https://github.com/descriptinc/melgan-neurips
-[1] https://github.com/descriptinc/melgan-neurips
