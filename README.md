@@ -4,7 +4,7 @@ DC-TTS 기반의 SMART-TTS의 Non-autoregressive TTS 모델입니다.
 "소량 데이터만을 이용한 고품질 종단형 기반의 딥러닝 다화자 운율 및 감정 복제 기술 개발"
 과제의 일환으로 공개된 코드입니다.
 
-SMART-TTS_Single_Emotional 모델은 [DC-TTS 모델](https://github.com/chaiyujin/dctts-pytorch)을 기반으로
+SMART-TTS_NAR_Fast_TTS 모델은 [DC-TTS 모델](https://github.com/chaiyujin/dctts-pytorch)을 기반으로
 adversarial training을 적용한 non-autoregressive 구조의 TTS 모델입니다. 
 
 DC-TTS 모델을 기반으로 하여 아래 부분들을 개선하였습니다.
