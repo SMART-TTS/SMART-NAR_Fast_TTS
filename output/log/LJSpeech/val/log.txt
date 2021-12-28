@@ -1,2 +1,0 @@
-Validation Step 100, Total Loss: 8.7860, Mel Loss: 3.6964, Mel PostNet Loss: 2.2361, Pitch Loss: 1.0050, Energy Loss: 1.1530, Duration Loss: 0.4742
-Validation Step 200, Total Loss: 7.2017, Mel Loss: 2.8322, Mel PostNet Loss: 1.7302, Pitch Loss: 1.0058, Energy Loss: 1.1416, Duration Loss: 0.4076
