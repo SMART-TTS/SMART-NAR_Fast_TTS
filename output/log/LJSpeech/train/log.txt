@@ -1,0 +1,12 @@
+Step 100/160000, Total Loss: 10.1874, Mel Loss: 3.7319, Mel PostNet Loss: 3.0677, Pitch Loss: 1.1959, Energy Loss: 1.4469, Dur Loss: 0.7449
+Step 200/160000, Total Loss: 7.8186, Mel Loss: 2.7865, Mel PostNet Loss: 2.2580, Pitch Loss: 1.0687, Energy Loss: 1.4314, Dur Loss: 0.2739
+Step 300/160000, Total Loss: 5.8212, Mel Loss: 1.9477, Mel PostNet Loss: 1.7009, Pitch Loss: 1.0411, Energy Loss: 1.0620, Dur Loss: 0.0694
+Step 400/160000, Total Loss: 4.8511, Mel Loss: 1.4042, Mel PostNet Loss: 1.3393, Pitch Loss: 1.0142, Energy Loss: 1.0540, Dur Loss: 0.0394
+Step 500/160000, Total Loss: 4.6941, Mel Loss: 1.2425, Mel PostNet Loss: 1.2798, Pitch Loss: 1.0365, Energy Loss: 1.1160, Dur Loss: 0.0194
+Step 600/160000, Total Loss: 4.7603, Mel Loss: 1.1672, Mel PostNet Loss: 1.3100, Pitch Loss: 0.9695, Energy Loss: 1.2842, Dur Loss: 0.0295
+Step 700/160000, Total Loss: 4.7834, Mel Loss: 1.1312, Mel PostNet Loss: 1.2686, Pitch Loss: 1.0003, Energy Loss: 1.3743, Dur Loss: 0.0090
+Step 800/160000, Total Loss: 4.3233, Mel Loss: 1.0701, Mel PostNet Loss: 1.1428, Pitch Loss: 0.9844, Energy Loss: 1.1231, Dur Loss: 0.0028
+Step 900/160000, Total Loss: 4.3783, Mel Loss: 1.0367, Mel PostNet Loss: 1.1291, Pitch Loss: 1.0120, Energy Loss: 1.1967, Dur Loss: 0.0038
+Step 1000/160000, Total Loss: 4.2157, Mel Loss: 1.0224, Mel PostNet Loss: 1.0782, Pitch Loss: 1.0363, Energy Loss: 1.0761, Dur Loss: 0.0028
+Step 100/160000, Total Loss: 10.6425, Mel Loss: 3.5847, Mel PostNet Loss: 3.0951, Pitch Loss: 1.2083, Energy Loss: 1.4648, Dur Loss: 0.8263
+Step 200/160000, Total Loss: 8.2327, Mel Loss: 2.7376, Mel PostNet Loss: 2.2718, Pitch Loss: 1.0015, Energy Loss: 1.3865, Dur Loss: 0.5849
