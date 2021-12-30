@@ -35,11 +35,6 @@ def get_model(args, configs, device, train=False):
     return model
 
 
-def get_param_num(model):
-    num_param = sum(param.numel() for param in model.parameters())
-    return num_param
-
-
 def get_vocoder(config, device):
     name = config["vocoder"]["model"]
     speaker = config["vocoder"]["speaker"]
