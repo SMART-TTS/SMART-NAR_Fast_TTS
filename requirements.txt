@@ -13,5 +13,5 @@ soundfile == 0.10.3.post1
 tensorboard == 2.2.2
 tgt == 1.4.4
 torch == 1.7.0
-tqdm==4.46.1
+tqdm == 4.46.1
 unidecode == 1.1.1
