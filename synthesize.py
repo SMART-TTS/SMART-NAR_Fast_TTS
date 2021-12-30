@@ -125,4 +125,4 @@ if __name__ == "__main__":
     text_lens = np.array([len(texts[0])])
     batchs = [(ids, raw_texts, speakers, texts, text_lens, max(text_lens))]
 
-    synthesize(model, args.restore_step, configs, vocoder, batchs)
+    synthesize(model, args.restore_step, configs , vocoder, batchs)
