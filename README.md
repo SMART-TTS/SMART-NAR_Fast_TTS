@@ -43,7 +43,7 @@ python3 train.py -p {preprocess config file path} -m {model condig file path} -t
 To evaluate, run:
 <pre>
 <code>
-python3 synthesize.py --text "text" --restore_step {restore step} -p {preprocess config file path} -m {model condig file path} -t {training config file path}
+python3 synthesize.py --text <text> --restore_step {restore step} -p {preprocess config file path} -m {model condig file path} -t {training config file path}
 
 ## Results
 Synthesized audio samples can be found in ./output/results
