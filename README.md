@@ -51,7 +51,7 @@ Synthesized audio samples can be found in ./output/results
 현재 ./output/results 저장된 샘플들은 연구실 보유중인 DB를 사용해 학습한 샘플입니다.
 
 ## Reference
-* [1] [ming024's FastSpeech 2 implementation](https://github.com/ming024/FastSpeech2)
-* [2] [FastSpeech 2: Fast and High-Quality End-to-End Text to Speech](https://arxiv.org/abs/2006.04558), Y. Ren, *et al*.
+* <1> [ming024's FastSpeech 2 implementation](https://github.com/ming024/FastSpeech2)
+* <2> [FastSpeech 2: Fast and High-Quality End-to-End Text to Speech](https://arxiv.org/abs/2006.04558), Y. Ren, *et al*.
 
- 본 프로젝트 관련 개선사항들에 대한 기술문서는 [여기](https://drive.google.com/file/d/1iyLF4qD5Lj2hbwUxQ8470AOyYOasi4_L/view?usp=sharing)를 참고해 주세요.
+본 프로젝트 관련 개선사항들에 대한 기술문서는 [여기](https://drive.google.com/file/d/1iyLF4qD5Lj2hbwUxQ8470AOyYOasi4_L/view?usp=sharing)를 참고해 주세요.
