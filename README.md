@@ -31,7 +31,7 @@ python3 preprocess.py --conf {preprocess configuration file path}
 </code>
 </pre>
 
-## Training
+# Training
 To train the NAR TTS model, run this command:
 <pre>
 <code>
@@ -39,18 +39,20 @@ python3 train.py -p {preprocess config file path} -m {model condig file path} -t
 </code>
 </pre>
 
-## Evaluation
+# Evaluation
 To evaluate, run:
 <pre>
 <code>
 python3 synthesize.py --text <text> --restore_step {restore step} -p {preprocess config file path} -m {model condig file path} -t {training config file path}
+</code>
+</pre>
 
-## Results
+# Results
 Synthesized audio samples can be found in ./output/results
 
 현재 ./output/results 저장된 샘플들은 연구실 보유중인 DB를 사용해 학습한 샘플입니다.
 
-## Reference
+# Reference
 * <1> [ming024's FastSpeech 2 implementation](https://github.com/ming024/FastSpeech2)
 * <2> [FastSpeech 2: Fast and High-Quality End-to-End Text to Speech](https://arxiv.org/abs/2006.04558), Y. Ren, *et al*.
 
