@@ -11,10 +11,10 @@ Done
 * Alignment 로부터 duration predictor 학습을 위한 duration label 추출
 * Predicted duration 을 기반으로 Gaussian upsampling 적용 
 
-## Environment
+# Environment
 Under Python 3.6
 
-## Requirements
+# Requirements
 To install requirements:
 <pre>
 <code>
@@ -22,7 +22,7 @@ pip install -r requirements.txt
 </code>
 </pre>
 
-## Preprocessing
+# Preprocessing
 To preprocess:
 <pre>
 <code>
